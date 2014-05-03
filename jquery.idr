@@ -7,6 +7,9 @@ module JQuery
 
 data JQSelector = JQSelectID String
 
+instance Show JQSelector where
+  show JQSelectID id = "#" ++ id
+
 
 data ElementType = Body
                  | Canvas
@@ -24,6 +27,10 @@ data JQuery a = MkJQuery a -- selects no elements
               | MkJQueryElement a ElementType (List Attribute)
               | MkJQueryUnion a (List (JQuery ()))
 
+
+jqString : JQuery a -> String
+jqString (MkJQuery a) = "$()"
+jqString (MkJQuerySelector a JQSelector)
 
 unwrapJQ : JQuery a -> a
 unwrapJQ (MkJQuery a) = a
@@ -59,7 +66,7 @@ instance Monad JQuery where
 
 
 -- (DOM) Manipulation
-appendTo : JQuery a -> String -> IO a
-appendTo selector target = mkForeign (
-  FFun "$(%0).appendTo(%1)" [FFunction FInt FInt, FInt] FInt
-  ) selector target
+appendTo : JQuery a -> JQuery b -> IO ()
+appendTo source target = mkForeign (
+  FFun "$(%0).appendTo($(%1))" [FFunction FString FString] FUnit
+  ) source target

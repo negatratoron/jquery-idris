@@ -24,7 +24,7 @@ instance Monad JQuery where
 
 
 -- (DOM) Manipulation
-appendTo : String -> String -> IO ()
+appendTo : JQuery a -> String -> IO a
 appendTo selector target = mkForeign (
   FFun "$(%0).appendTo(%1)" [FFunction FInt FInt, FInt] FInt
   ) selector target

@@ -8,7 +8,7 @@ module JQuery
 data JQSelector = JQSelectID String
 
 instance Show JQSelector where
-  show JQSelectID id = "#" ++ id
+  show (JQSelectID id) = "#" ++ id
 
 
 data ElementType = Body
@@ -20,28 +20,33 @@ data Attribute = Height Int
                | Id String
                | Width Int
 
+data JQElement = MkJQElement ElementType (List Attribute)
+
 
 -- monad that encapsulates the usages of $ that select DOM elements
 data JQuery a = MkJQuery a -- selects no elements
               | MkJQuerySelector a JQSelector
-              | MkJQueryElement a ElementType (List Attribute)
+              | MkJQueryElement a JQElement
               | MkJQueryUnion a (List (JQuery ()))
 
 
-jqString : JQuery a -> String
-jqString (MkJQuery a) = "$()"
-jqString (MkJQuerySelector a JQSelector)
+instance Show (JQuery a) where
+  show (MkJQuery _) = "$()"
+  show (MkJQuerySelector _ selector) = "$(" ++ show (show selector) ++ ")"
+  show (MkJQueryElement a element) = "$()"
+  show (MkJQueryUnion _ (jsa :: jsbs)) = show jsa ++ ".add(" ++ show (MkJQueryUnion () jsbs) ++ ")"
+  
 
 unwrapJQ : JQuery a -> a
 unwrapJQ (MkJQuery a) = a
 unwrapJQ (MkJQuerySelector a _) = a
-unwrapJQ (MkJQueryElement a _ _) = a
+unwrapJQ (MkJQueryElement a _) = a
 unwrapJQ (MkJQueryUnion a _) = a
 
 clobberJQ : JQuery a -> JQuery ()
 clobberJQ (MkJQuery _) = MkJQuery ()
 clobberJQ (MkJQuerySelector _ s) = MkJQuerySelector () s
-clobberJQ (MkJQueryElement _ et attrs) = MkJQueryElement () et attrs
+clobberJQ (MkJQueryElement _ e) = MkJQueryElement () e 
 clobberJQ (MkJQueryUnion _ jqs) = MkJQueryUnion () jqs
 
 mkJQUnion : JQuery a -> JQuery b -> JQuery a
@@ -51,7 +56,7 @@ mkJQUnion jqa jqb = MkJQueryUnion (unwrapJQ jqa) [(clobberJQ jqa), (clobberJQ jq
 instance Functor JQuery where
   map func (MkJQuery a) = MkJQuery (func a)
   map func (MkJQuerySelector a selector) = MkJQuerySelector (func a) selector
-  map func (MkJQueryElement a et attrs) = MkJQueryElement (func a) et attrs
+  map func (MkJQueryElement a e) = MkJQueryElement (func a) e
   map func (MkJQueryUnion a jqs) = MkJQueryUnion (func a) jqs
 
 
@@ -68,5 +73,5 @@ instance Monad JQuery where
 -- (DOM) Manipulation
 appendTo : JQuery a -> JQuery b -> IO ()
 appendTo source target = mkForeign (
-  FFun "$(%0).appendTo($(%1))" [FFunction FString FString] FUnit
-  ) source target
+  FFun "$(%0).appendTo($(%1))" [FString, FString] FUnit
+  ) (show source) (show target)

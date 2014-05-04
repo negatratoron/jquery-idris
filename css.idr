@@ -1,24 +1,29 @@
-module CSS
+module Css
 
-data CSSCombinator = CSSDescendant
-                   | CSSChild
-                   | CSSAdjacentSibling
+data CssCombinator = CssDescendant
+                   | CssChild
+                   | CssAdjacentSibling
 
-instance Show CSSCombinator where
-  show CSSDescendant = " "
-  show CSSChild = " > "
-  show CSSAdjacentSibling = " + "
-
-
+instance Show CssCombinator where
+  show CssDescendant = " "
+  show CssChild = " > "
+  show CssAdjacentSibling = " + "
 
 
 
-data CSSSimpleSelector = CSSUniversalSelector
-                       | CSSTypeSelector String
+data CssSimpleSelector = CssUniversalSelector
+                       | CssTypeSelector String
 
 
-data CSSSelectorMod = CSSClassSelectorMod String
-                    | CSSIdSelectorMod String
-                    | CSSAttributeSetSelector String
-                    | CSSAttributeEqualSelector String String -- name string
-                    | CSSAttributeContainsSelector String String -- name string
+data CssSelectorMod = CssClassSelectorMod String
+                    | CssIdSelectorMod String
+                    | CssAttributeSetSelector String
+                    | CssAttributeEqualSelector String String -- name string
+                    | CssAttributeContainsSelector String String -- name string
+                    | CssPseudoSelectorMod CssPseudoSelector
+
+
+data CssSelector = CssSelector CssSimpleSelector [CssSelectorMod]
+                 | CssSelectorChain CssSelector CssSelector CssCombinator
+
+

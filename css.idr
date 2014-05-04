@@ -75,7 +75,7 @@ instance Show CssSelector where
     if (length mods) > 0 && (simpleSelector == CssUniversalSelector) then
       selectorMods
     else
-      (show simpleSelector) ++ selectorMods
+      show simpleSelector ++ selectorMods
     where
       selectorMods = foldr (++) "" $ map show mods
-  show (MkCssSelectorChaing s1 s2 c) = show s1 ++ show c ++ show s2
+  show (MkCssSelectorChain s1 s2 c) = show s1 ++ show c ++ show s2

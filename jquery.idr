@@ -1,4 +1,6 @@
- module JQuery
+module JQuery
+
+import css
 
 -- These methods match the JQuery API as closely as possible
 -- http://api.jquery.com/
@@ -27,15 +29,6 @@ instance Show ElementType where
 data Attribute = Height Int
                | Id String
                | Width Int
-               | Style [CSSStyle]
-
-data CSSStyle = CSSHeight Int
-              | CSSLeft Int
-              | CSSPosition CSSPositionType
-              | CSSTop Int
-              | CSSWidth Int
-
-data CSSPositionType = CSSPositionAbsolute
 
 
 instance Show Attribute where

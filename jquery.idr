@@ -1,4 +1,4 @@
-module JQuery
+ module JQuery
 
 -- These methods match the JQuery API as closely as possible
 -- http://api.jquery.com/
@@ -6,9 +6,11 @@ module JQuery
 
 
 data JQSelector = JQSelectID String
+                | JQSelectTag String
 
 instance Show JQSelector where
   show (JQSelectID id) = "#" ++ id
+  show (JQSelectTag tag) = tag
 
 
 data ElementType = Body
@@ -28,71 +30,59 @@ data Attribute = Height Int
 
 instance Show Attribute where
   show (Height px) = "height=\"" ++ show px ++ "px\""
-  show (Id id) = "id=\"" ++ show id ++ "\""
+  show (Id id) = "id=\"" ++ id ++ "\""
   show (Width px) = "width=\"" ++ show px ++ "px\""
 
 data HTMLElement = MkElement ElementType (List Attribute) (Maybe HTMLElement)
                  | MkText String
 
+
+-- methods that show the open tag and close tag for HTML elements
+showOpenTag : HTMLElement -> String
+showOpenTag (MkElement type attrs _) = "<" ++ typeString ++ attrsString ++ ">"
+  where typeString = show type
+        attrsString = foldl (\acc, attr => acc ++ " " ++ show attr) "" attrs
+showOpenTag (MkText text) = text
+
+
+showCloseTag : HTMLElement -> String
+showCloseTag (MkElement type _ _) = "</" ++ show type ++ ">"
+showCloseTag (MkText _) = ""
+
+
+innerElement : HTMLElement -> Maybe HTMLElement
+innerElement (MkElement _ _ (Just el)) = Just el
+innerElement _ = Nothing
+
+
 instance Show HTMLElement where
-  show (MkElement type attrs (Just el)) =
-    "<" ++ typeString ++ attrsString ++ ">" ++
-    childElementString ++
-    "<" ++ typeString ++ "/>" where
-      typeString = show type
-      childElementString = show el
-      attrsString = 
+  show el = openTagString ++ innerElementString ++ closeTagString
+    where openTagString = showOpenTag el
+          closeTagString = showCloseTag el
+          innerElementString = fromMaybe "" $ map show $ innerElement el
 
 
 -- monad that encapsulates the usages of $ that select DOM elements
-data JQuery a = MkJQuery a -- selects no elements
-              | MkJQuerySelector a JQSelector
-              | MkJQueryElement a JQElement
-              | MkJQueryUnion a (List (JQuery ()))
+data JQuery = MkJQuery -- selects no elements
+            | MkJQuerySelector JQSelector
+            | MkJQueryElement HTMLElement
 
 
-instance Show (JQuery a) where
-  show (MkJQuery _) = "$()"
-  show (MkJQuerySelector _ selector) = "$(" ++ show (show selector) ++ ")"
-  show (MkJQueryElement a element) = "$()"
-  show (MkJQueryUnion _ (jsa :: jsbs)) = show jsa ++ ".add(" ++ show (MkJQueryUnion () jsbs) ++ ")"
-  
-
-unwrapJQ : JQuery a -> a
-unwrapJQ (MkJQuery a) = a
-unwrapJQ (MkJQuerySelector a _) = a
-unwrapJQ (MkJQueryElement a _) = a
-unwrapJQ (MkJQueryUnion a _) = a
-
-clobberJQ : JQuery a -> JQuery ()
-clobberJQ (MkJQuery _) = MkJQuery ()
-clobberJQ (MkJQuerySelector _ s) = MkJQuerySelector () s
-clobberJQ (MkJQueryElement _ e) = MkJQueryElement () e 
-clobberJQ (MkJQueryUnion _ jqs) = MkJQueryUnion () jqs
-
-mkJQUnion : JQuery a -> JQuery b -> JQuery a
-mkJQUnion jqa jqb = MkJQueryUnion (unwrapJQ jqa) [(clobberJQ jqa), (clobberJQ jqb)]
-
-
-instance Functor JQuery where
-  map func (MkJQuery a) = MkJQuery (func a)
-  map func (MkJQuerySelector a selector) = MkJQuerySelector (func a) selector
-  map func (MkJQueryElement a e) = MkJQueryElement (func a) e
-  map func (MkJQueryUnion a jqs) = MkJQueryUnion (func a) jqs
-
-
-instance Applicative JQuery where
-  pure = MkJQuery
-  jqFunc <$> jq = map (unwrapJQ jqFunc) (mkJQUnion jq jqFunc)
-
-
-instance Monad JQuery where
-  jq >>= func = func (unwrapJQ jq)
+instance Show JQuery where
+  show MkJQuery = ""
+  show (MkJQuerySelector selector) = show selector
+  show (MkJQueryElement element) = show element
 
 
 
 -- (DOM) Manipulation
-appendTo : JQuery a -> JQuery b -> IO ()
-appendTo source target = mkForeign (
-  FFun "$(%0).appendTo($(%1))" [FString, FString] FUnit
-  ) (show source) (show target)
+appendTo : JQuery -> JQuery -> IO JQuery
+-- appendTo target source = mkForeign (
+--   FFun "%1.appendTo(%0)" [FString, FString] FUnit
+--   ) (show source) (show target)
+
+appendTo target source = do
+  mkForeign (
+    FFun "$(%0).appendTo($(%1))" [FString, FString] FUnit
+    ) (show source) (show target)
+  return source

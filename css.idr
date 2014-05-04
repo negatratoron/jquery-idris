@@ -78,3 +78,4 @@ instance Show CssSelector where
       (show simpleSelector) ++ selectorMods
     where
       selectorMods = foldr (++) "" $ map show mods
+  show (MkCssSelectorChaing s1 s2 c) = show s1 ++ show c ++ show s2

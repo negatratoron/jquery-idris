@@ -16,11 +16,32 @@ data ElementType = Body
                  | Div
 
 
+instance Show ElementType where
+  show Body = "body"
+  show Canvas = "canvas"
+  show Div = "div"
+
+
 data Attribute = Height Int
                | Id String
                | Width Int
 
-data JQElement = MkJQElement ElementType (List Attribute)
+instance Show Attribute where
+  show (Height px) = "height=\"" ++ show px ++ "px\""
+  show (Id id) = "id=\"" ++ show id ++ "\""
+  show (Width px) = "width=\"" ++ show px ++ "px\""
+
+data HTMLElement = MkElement ElementType (List Attribute) (Maybe HTMLElement)
+                 | MkText String
+
+instance Show HTMLElement where
+  show (MkElement type attrs (Just el)) =
+    "<" ++ typeString ++ attrsString ++ ">" ++
+    childElementString ++
+    "<" ++ typeString ++ "/>" where
+      typeString = show type
+      childElementString = show el
+      attrsString = 
 
 
 -- monad that encapsulates the usages of $ that select DOM elements

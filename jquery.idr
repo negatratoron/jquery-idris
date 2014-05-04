@@ -27,6 +27,16 @@ instance Show ElementType where
 data Attribute = Height Int
                | Id String
                | Width Int
+               | Style [CSSStyle]
+
+data CSSStyle = CSSHeight Int
+              | CSSLeft Int
+              | CSSPosition CSSPositionType
+              | CSSTop Int
+              | CSSWidth Int
+
+data CSSPositionType = CSSPositionAbsolute
+
 
 instance Show Attribute where
   show (Height px) = "height=\"" ++ show px ++ "px\""
@@ -62,7 +72,7 @@ instance Show HTMLElement where
           innerElementString = fromMaybe "" $ map show $ innerElement el
 
 
--- monad that encapsulates the usages of $ that select DOM elements
+-- encapsulates the usages of $ that select DOM elements
 data JQuery = MkJQuery -- selects no elements
             | MkJQuerySelector JQSelector
             | MkJQueryElement HTMLElement
@@ -77,10 +87,6 @@ instance Show JQuery where
 
 -- (DOM) Manipulation
 appendTo : JQuery -> JQuery -> IO JQuery
--- appendTo target source = mkForeign (
---   FFun "%1.appendTo(%0)" [FString, FString] FUnit
---   ) (show source) (show target)
-
 appendTo target source = do
   mkForeign (
     FFun "$(%0).appendTo($(%1))" [FString, FString] FUnit
